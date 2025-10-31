@@ -46,6 +46,7 @@ static gboolean opt_sideloaded;
 static char *opt_arch;
 static char *opt_app_runtime;
 static const char **opt_cols;
+static gboolean opt_json;
 
 static GOptionEntry options[] = {
   { "show-details", 'd', 0, G_OPTION_ARG_NONE, &opt_show_details, N_("Show arches and branches"), NULL },
@@ -59,6 +60,7 @@ static GOptionEntry options[] = {
   { "cached", 0, 0, G_OPTION_ARG_NONE, &opt_cached, N_("Use local caches even if they are stale"), NULL },
   /* Translators: A sideload is when you install from a local USB drive rather than the Internet. */
   { "sideloaded", 0, 0, G_OPTION_ARG_NONE, &opt_sideloaded, N_("Only list refs available as sideloads"), NULL },
+  { "json", 'j', 0, G_OPTION_ARG_NONE, &opt_json, N_("Show output in JSON format"), NULL },
   { NULL }
 };
 
@@ -255,8 +257,8 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
           has_sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, ref_str, &sparse_cache, NULL);
           if (!opt_all && has_sparse_cache)
             {
-              const char *eol = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, NULL);
-              const char *eol_rebase = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, NULL);
+              const char *eol = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, NULL);
+              const char *eol_rebase = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, NULL);
 
               if (eol != NULL || eol_rebase != NULL)
                 continue;
@@ -351,8 +353,8 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
                   flatpak_table_printer_add_column (printer, ""); /* Extra */
                   if (has_sparse_cache)
                     {
-                      const char *eol = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, NULL);
-                      const char *eol_rebase = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, NULL);
+                      const char *eol = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, NULL);
+                      const char *eol_rebase = var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, NULL);
 
                       if (eol)
                         flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
@@ -368,7 +370,7 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
 
   if (flatpak_table_printer_get_current_row (printer) > 0)
     {
-      flatpak_table_printer_print (printer);
+      opt_json ? flatpak_table_printer_print_json (printer) : flatpak_table_printer_print (printer);
     }
 
   return TRUE;

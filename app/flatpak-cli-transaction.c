@@ -594,6 +594,18 @@ operation_error (FlatpakTransaction            *transaction,
         }
     }
 
+  /* On a fatal error, just clear the progress line. The error will be printed in main() before exiting. */
+  if (!non_fatal && self->stop_on_first_error)
+    {
+      if (flatpak_fancy_output ())
+        {
+          flatpak_table_printer_set_cell (self->printer, self->progress_row, 0, "");
+          redraw (self);
+        }
+
+      return FALSE;
+    }
+
   if (flatpak_fancy_output ())
     {
       flatpak_table_printer_set_cell (self->printer, self->progress_row, 0, text);
@@ -604,9 +616,6 @@ operation_error (FlatpakTransaction            *transaction,
     }
   else
     g_printerr ("%s\n", text);
-
-  if (!non_fatal && self->stop_on_first_error)
-    return FALSE;
 
   return TRUE; /* Continue */
 }
@@ -1350,7 +1359,7 @@ transaction_ready_pre_auth (FlatpakTransaction *transaction)
   GList *l;
   int i;
   FlatpakTablePrinter *printer;
-  const char *op_shorthand[] = { "i", "u", "i", "r" };
+  const char *op_shorthand[] = { "i", "u", "i", "r", "i" };
 
   /* These caches may no longer be valid once the transaction runs */
   g_clear_pointer (&self->runtime_app_map, g_hash_table_unref);
